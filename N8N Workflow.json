@@ -1,0 +1,1705 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "c711d97c-8825-4522-acdd-5f9ed44e417c",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -928,
+        -208
+      ],
+      "id": "9fba0191-0c7f-4582-a0de-06be4b796242",
+      "name": "Webhook",
+      "webhookId": "c711d97c-8825-4522-acdd-5f9ed44e417c"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "02895326-4493-444a-96d1-ee79a9f4c2c1",
+              "name": "body",
+              "value": "={{ $json.body.data }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -704,
+        -208
+      ],
+      "id": "81eeab88-f93d-4355-9394-f53691fd7ee9",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "body.StepsRecord",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        -448
+      ],
+      "id": "7b8f0389-3214-4517-9b03-9f5ced40430f",
+      "name": "StepsJSON"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9e0bfeb1-045f-4353-be99-dab31cd4a6d7",
+              "name": "date",
+              "value": "={{ $json.endTime.substring(0, 10) }}",
+              "type": "string"
+            },
+            {
+              "id": "297b93d3-1ada-4699-a88c-8605665150e8",
+              "name": "count",
+              "value": "={{ $json.count }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        48,
+        -448
+      ],
+      "id": "898a52fe-d503-4501-b050-a80a42aae1e2",
+      "name": "GetCount"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "body.OxygenSaturationRecord",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        -288
+      ],
+      "id": "c455de47-dd77-4d5c-96cb-de7da753ef71",
+      "name": "oxygenJSON"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7cbfc916-2c06-4b53-8a72-13135df1f838",
+              "name": "Date",
+              "value": "={{ $json.time.substring(0, 10) }}",
+              "type": "string"
+            },
+            {
+              "id": "3123d805-9445-4a79-8209-eff7dd17c145",
+              "name": "percentage",
+              "value": "={{ $json.percentage }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        48,
+        -288
+      ],
+      "id": "53af6d49-31f1-431d-af44-9f0a5eade1fd",
+      "name": "GetPercentage"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "body.HeartRateRecord",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        -128
+      ],
+      "id": "8418f71d-dfe0-4da3-9faf-6837212b661f",
+      "name": "bpmJSON"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "body.SleepSessionRecord",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        32
+      ],
+      "id": "e379cf28-dc32-4732-aa65-79184dd745dd",
+      "name": "sleepJSON"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Group HeartRate samples by date and compute min / max / avg\n\nconst daily = {};\n\nfor (const item of items) {\n  const record = item.json;\n  if (!Array.isArray(record.samples)) continue;\n\n  for (const s of record.samples) {\n    const bpm = s.beatsPerMinute;\n    if (typeof bpm !== 'number') continue;\n\n    const date = new Date(s.time).toISOString().split('T')[0];\n\n    if (!daily[date]) {\n      daily[date] = {\n        sum: 0,\n        count: 0,\n        min: bpm,\n        max: bpm\n      };\n    }\n\n    daily[date].sum += bpm;\n    daily[date].count += 1;\n    daily[date].min = Math.min(daily[date].min, bpm);\n    daily[date].max = Math.max(daily[date].max, bpm);\n  }\n}\n\nconst output = [];\n\nfor (const [date, d] of Object.entries(daily)) {\n  output.push({\n    json: {\n      Date: date,\n      BpmMin: d.min,\n      BpmMax: d.max,\n      BpmAvg: Math.round(d.sum / d.count)\n    }\n  });\n}\n\nreturn output;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48,
+        -128
+      ],
+      "id": "61359524-ca8e-456b-bd6b-57ad532adf1a",
+      "name": "Normalize BPM"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node\n// Aggregates sleep per WAKE-UP DATE (fixes missing 17th)\n\nconst STAGE_MAP = {\n  1: 'AWAKE',\n  4: 'LIGHT',\n  5: 'DEEP',\n  6: 'REM'\n};\n\nconst dayMap = {};\n\n// ---- FIRST PASS: group by wake-up date ----\nfor (const item of items) {\n  const input = item.json;\n\n  if (!Array.isArray(input.stages)) continue;\n\n  for (const s of input.stages) {\n    const stageName = STAGE_MAP[s.stage];\n    if (!stageName) continue;\n\n    const start = new Date(s.startTime);\n    const end = new Date(s.endTime);\n    if (isNaN(start) || isNaN(end)) continue;\n\n    const duration = (end - start) / 60000;\n    if (duration <= 0) continue;\n\n    // ✅ USE endTime date (wake-up day)\n    const date = end.toISOString().split('T')[0];\n\n    if (!dayMap[date]) {\n      dayMap[date] = {\n        date,\n        total_sleep_minutes: 0,\n        light_minutes: 0,\n        deep_minutes: 0,\n        rem_minutes: 0,\n        awake_minutes: 0\n      };\n    }\n\n    const day = dayMap[date];\n\n    switch (stageName) {\n      case 'LIGHT':\n        day.light_minutes += duration;\n        day.total_sleep_minutes += duration;\n        break;\n\n      case 'DEEP':\n        day.deep_minutes += duration;\n        day.total_sleep_minutes += duration;\n        break;\n\n      case 'REM':\n        day.rem_minutes += duration;\n        day.total_sleep_minutes += duration;\n        break;\n\n      case 'AWAKE':\n        day.awake_minutes += duration;\n        break;\n    }\n  }\n}\n\n// ---- SECOND PASS: round + output ----\nconst output = Object.values(dayMap)\n  .sort((a, b) => a.date.localeCompare(b.date))\n  .map(d => ({\n    json: {\n      date: d.date,\n      total_sleep_minutes: Math.round(d.total_sleep_minutes),\n      light_minutes: Math.round(d.light_minutes),\n      deep_minutes: Math.round(d.deep_minutes),\n      rem_minutes: Math.round(d.rem_minutes),\n      awake_minutes: Math.round(d.awake_minutes)\n    }\n  }));\n\nreturn output;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        48,
+        32
+      ],
+      "id": "eff2d022-b43a-4a23-ba68-91d648bc1ca1",
+      "name": "Normalize Sleep"
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        768,
+        -112
+      ],
+      "id": "61c6329e-c39d-4df6-86d5-f0eb9be0c8cd",
+      "name": "Error Merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "const combined = items\n  .map(item => item.json.error)\n  .filter(Boolean)\n  .join(\"\\n\");\n\nreturn [{\n  json: {\n    error: combined\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1088,
+        -80
+      ],
+      "id": "e798e875-f52b-49aa-8e6f-187f50ee2c5f",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "174d5484-fabc-4257-8ec7-0b089576df1a",
+              "name": "error",
+              "value": "={{ $json.error }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        912,
+        -80
+      ],
+      "id": "c111f8c6-83bd-47d3-8f3d-7c6c623b821c",
+      "name": "FAIL MERGE"
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        768,
+        -352
+      ],
+      "id": "97c22989-c93f-4e83-adc1-95b1baf1622b",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "sendTo": "akaash297@gmail.com",
+        "subject": "WorkFlow Error",
+        "emailType": "text",
+        "message": "=Workflow Failed due to the following errors:\n\n{{ $json.error }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1264,
+        -80
+      ],
+      "id": "058c50cf-cb6d-4477-b5b7-5453563cdefa",
+      "name": "Send Fails",
+      "webhookId": "fb7efbd2-96e6-45bb-8f73-12f0b04ac5fa",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "yp3acgUZGZhknB7a",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "akaash297@gmail.com",
+        "subject": "Workflow Success",
+        "emailType": "text",
+        "message": "=Successfully Imported All Data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1264,
+        -320
+      ],
+      "id": "741cdecc-ba10-41a7-b6a9-c9a3339122cd",
+      "name": "Send Success",
+      "webhookId": "fb7efbd2-96e6-45bb-8f73-12f0b04ac5fa",
+      "executeOnce": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "yp3acgUZGZhknB7a",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# CLEAR TABLES",
+        "height": 80,
+        "width": 304
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -928,
+        -1568
+      ],
+      "id": "a0b203c8-ac2d-4e1f-b324-2ad1818503ac",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "BPMDATA",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "Date",
+              "condition": "neq",
+              "keyValue": "1-1-1"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -752,
+        -1136
+      ],
+      "id": "c12d4068-039e-44e8-af2d-5cadd2ccd055",
+      "name": "Clear BPM DB",
+      "credentials": {
+        "supabaseApi": {
+          "id": "xRaqne7Ii4nulyoF",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "O2STAT",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "Date",
+              "condition": "neq",
+              "keyValue": "1-1-1"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -752,
+        -976
+      ],
+      "id": "f9cdadb5-cb47-4f07-b4eb-2ff014578446",
+      "name": "Clear O2 DB",
+      "credentials": {
+        "supabaseApi": {
+          "id": "xRaqne7Ii4nulyoF",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "SLEEPDATA",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "Date",
+              "condition": "neq",
+              "keyValue": "1-1-1"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -752,
+        -1296
+      ],
+      "id": "05fd249b-80ec-4116-890c-e0dc530fe88c",
+      "name": "Clear Sleep DB",
+      "credentials": {
+        "supabaseApi": {
+          "id": "xRaqne7Ii4nulyoF",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "STEPCOUNT",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "Date",
+              "condition": "neq",
+              "keyValue": "1-1-1"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -752,
+        -1456
+      ],
+      "id": "895824b2-8c39-440d-b867-d32171a6c224",
+      "name": "Clear Steps DB",
+      "credentials": {
+        "supabaseApi": {
+          "id": "xRaqne7Ii4nulyoF",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO \"STEPCOUNT\" (\"Date\", \"StepCount\")\nVALUES (\n  to_date('{{ $json.date }}', 'YYYY-MM-DD'),\n  {{ $json.count }}\n)\nON CONFLICT (\"Date\")\nDO UPDATE SET\n  \"StepCount\" = EXCLUDED.\"StepCount\";\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        432,
+        -448
+      ],
+      "id": "38745188-6404-4004-a88c-25fd8d500836",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "fUMBZtF42Edf5puE",
+          "name": "Postgres account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO \"O2STAT\" (\"Date\", \"Oxygen\")\nVALUES (\n  to_date('{{ $json.Date }}', 'YYYY-MM-DD'),\n  {{ $json.percentage }}\n)\nON CONFLICT (\"Date\")\nDO UPDATE SET\n  \"Oxygen\" = EXCLUDED.\"Oxygen\";\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        432,
+        -288
+      ],
+      "id": "e5f7b84c-8f9e-4671-9da9-3e8547d648f8",
+      "name": "Execute a SQL query1",
+      "credentials": {
+        "postgres": {
+          "id": "fUMBZtF42Edf5puE",
+          "name": "Postgres account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO \"BPMDATA\" (\"Date\", \"BpmMIN\", \"BpmMAX\", \"BpmAVG\")\nVALUES (\n  to_date('{{ $json.Date }}', 'YYYY-MM-DD'),\n  {{ $json.BpmMin }},\n  {{ $json.BpmMax }},\n  {{ $json.BpmAvg }}\n)\nON CONFLICT (\"Date\")\nDO UPDATE SET\n  \"BpmMIN\" = EXCLUDED.\"BpmMIN\",\n  \"BpmMAX\" = EXCLUDED.\"BpmMAX\",\n  \"BpmAVG\" = EXCLUDED.\"BpmAVG\";\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        432,
+        -128
+      ],
+      "id": "e46a5993-c469-44bf-8db7-d6f7d13d7a96",
+      "name": "Execute a SQL query2",
+      "credentials": {
+        "postgres": {
+          "id": "fUMBZtF42Edf5puE",
+          "name": "Postgres account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO \"SLEEPDATA\" (\n  \"Date\",\n  \"TotalSleep\",\n  \"LightSleep\",\n  \"DeepSleep\",\n  \"RemSleep\",\n  \"AwakeSleep\"\n)\nVALUES (\n  to_date('{{ $json.date }}', 'YYYY-MM-DD'),\n  {{ $json.total_sleep_minutes }},\n  {{ $json.light_minutes }},\n  {{ $json.deep_minutes }},\n  {{ $json.rem_minutes }},\n  {{ $json.awake_minutes }}\n)\nON CONFLICT (\"Date\")\nDO UPDATE SET\n  \"TotalSleep\" = EXCLUDED.\"TotalSleep\",\n  \"LightSleep\" = EXCLUDED.\"LightSleep\",\n  \"DeepSleep\" = EXCLUDED.\"DeepSleep\",\n  \"RemSleep\" = EXCLUDED.\"RemSleep\",\n  \"AwakeSleep\" = EXCLUDED.\"AwakeSleep\";\n",
+        "options": {
+          "queryBatching": "independently"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        432,
+        32
+      ],
+      "id": "05fbae79-9be1-4006-88f8-447d53b1d388",
+      "name": "Execute a SQL query3",
+      "credentials": {
+        "postgres": {
+          "id": "fUMBZtF42Edf5puE",
+          "name": "Postgres account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "845fea12-c805-4038-b0ce-c6ba853c6be8",
+              "name": "",
+              "value": "={{ $json.body.StepsRecord[0].startTime.substring(0, 10) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -304,
+        1056
+      ],
+      "id": "e822ddea-b266-49db-ab9d-90b300f6f4e3",
+      "name": "Start Date"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  dn.\"day_name\" AS \"Day\",\n  to_char(sm.\"Date\", 'YYYY-MM-DD') AS \"Date\",\n  sm.\"sleep_efficiency_pct\"\nFROM \"sleep_metrics\" sm\nJOIN \"date_norm\" dn\n  ON sm.\"Date\" = dn.\"date\"\nWHERE sm.\"Date\"\nBETWEEN to_date('{{ $json[\"\"] }}', 'YYYY-MM-DD')\n    AND to_date('{{ $json[\"\"] }}', 'YYYY-MM-DD') + INTERVAL '6 days'\nORDER BY sm.\"Date\";\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        32,
+        416
+      ],
+      "id": "255b7985-dc0c-4008-bf54-86774b883c18",
+      "name": "Sleep Efficiency",
+      "credentials": {
+        "postgres": {
+          "id": "fUMBZtF42Edf5puE",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  dn.\"day_name\" AS \"Day\",\n  to_char(sd.\"Date\", 'YYYY-MM-DD') AS \"Date\",\n  sd.\"TotalSleep\"\nFROM \"SLEEPDATA\" sd\nJOIN \"date_norm\" dn\n  ON sd.\"Date\" = dn.\"date\"\nWHERE sd.\"Date\"\nBETWEEN to_date('{{ $json[\"\"] }}', 'YYYY-MM-DD')\n    AND to_date('{{ $json[\"\"] }}', 'YYYY-MM-DD') + INTERVAL '6 days'\nORDER BY sd.\"Date\";\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        32,
+        576
+      ],
+      "id": "da050ec9-9353-4e1b-be80-03a7a795ecf3",
+      "name": "Total Sleep Time",
+      "credentials": {
+        "postgres": {
+          "id": "fUMBZtF42Edf5puE",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  dn.\"day_name\" AS \"Day\",\n  to_char(sc.\"Date\", 'YYYY-MM-DD') AS \"Date\",\n  sc.\"StepCount\"\nFROM \"STEPCOUNT\" sc\nJOIN \"date_norm\" dn\n  ON sc.\"Date\" = dn.\"date\"\nWHERE sc.\"Date\"\nBETWEEN to_date('{{ $json[\"\"] }}', 'YYYY-MM-DD')\n    AND to_date('{{ $json[\"\"] }}', 'YYYY-MM-DD') + INTERVAL '6 days'\nORDER BY sc.\"Date\";\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        32,
+        736
+      ],
+      "id": "e16c84c5-0809-4d2f-a707-93e5d49cbf45",
+      "name": "Step Count",
+      "credentials": {
+        "postgres": {
+          "id": "fUMBZtF42Edf5puE",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  dn.\"day_name\" AS \"Day\",\n  to_char(o.\"Date\", 'YYYY-MM-DD') AS \"Date\",\n  o.\"Oxygen\"\nFROM \"O2STAT\" o\nJOIN \"date_norm\" dn\n  ON o.\"Date\" = dn.\"date\"\nWHERE o.\"Date\"\nBETWEEN to_date('{{ $json[\"\"] }}', 'YYYY-MM-DD')\n    AND to_date('{{ $json[\"\"] }}', 'YYYY-MM-DD') + INTERVAL '6 days'\nORDER BY o.\"Date\";\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        32,
+        1056
+      ],
+      "id": "523488ce-eba2-4cbc-8ee4-8bdba00b5667",
+      "name": "Oxygen",
+      "credentials": {
+        "postgres": {
+          "id": "fUMBZtF42Edf5puE",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  dn.\"day_name\" AS \"Day\",\n  to_char(b.\"Date\", 'YYYY-MM-DD') AS \"Date\",\n  b.\"BpmAVG\"\nFROM \"BPMDATA\" b\nJOIN \"date_norm\" dn\n  ON b.\"Date\" = dn.\"date\"\nWHERE b.\"Date\"\nBETWEEN to_date('{{ $json[\"\"] }}', 'YYYY-MM-DD')\n    AND to_date('{{ $json[\"\"] }}', 'YYYY-MM-DD') + INTERVAL '6 days'\nORDER BY b.\"Date\";\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        32,
+        1216
+      ],
+      "id": "336e50b5-308c-478e-9436-6a72da3eac54",
+      "name": "AvgBPM",
+      "credentials": {
+        "postgres": {
+          "id": "fUMBZtF42Edf5puE",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  dn.\"day_name\" AS \"Day\",\n  to_char(b.\"Date\", 'YYYY-MM-DD') AS \"Date\",\n  b.\"BpmMIN\"\nFROM \"BPMDATA\" b\nJOIN \"date_norm\" dn\n  ON b.\"Date\" = dn.\"date\"\nWHERE b.\"Date\"\nBETWEEN to_date('{{ $json[\"\"] }}', 'YYYY-MM-DD')\n    AND to_date('{{ $json[\"\"] }}', 'YYYY-MM-DD') + INTERVAL '6 days'\nORDER BY b.\"Date\";\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        32,
+        1376
+      ],
+      "id": "55210e54-d3d2-4e9c-bc94-48bca020350f",
+      "name": "MinBPM",
+      "credentials": {
+        "postgres": {
+          "id": "fUMBZtF42Edf5puE",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  dn.\"day_name\" AS \"Day\",\n  to_char(b.\"Date\", 'YYYY-MM-DD') AS \"Date\",\n  b.\"BpmMAX\"\nFROM \"BPMDATA\" b\nJOIN \"date_norm\" dn\n  ON b.\"Date\" = dn.\"date\"\nWHERE b.\"Date\"\nBETWEEN to_date('{{ $json[\"\"] }}', 'YYYY-MM-DD')\n    AND to_date('{{ $json[\"\"] }}', 'YYYY-MM-DD') + INTERVAL '6 days'\nORDER BY b.\"Date\";\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        32,
+        1536
+      ],
+      "id": "d8a09870-c71f-4d4d-a515-f6784259eeb4",
+      "name": "MaxBPM",
+      "credentials": {
+        "postgres": {
+          "id": "fUMBZtF42Edf5puE",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  CASE\n    WHEN dn.\"is_weekend\" THEN 'weekend'\n    ELSE 'weekday'\n  END AS day_type,\n  ROUND(AVG(sd.\"TotalSleep\"))::int AS avg_sleep_time\nFROM \"SLEEPDATA\" sd\nJOIN \"date_norm\" dn\n  ON sd.\"Date\" = dn.\"date\"\nWHERE dn.\"date\"\nBETWEEN to_date('{{ $json[\"\"] }}', 'YYYY-MM-DD')\n    AND to_date('{{ $json[\"\"] }}', 'YYYY-MM-DD') + INTERVAL '6 days'\nGROUP BY dn.\"is_weekend\";\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        32,
+        896
+      ],
+      "id": "30a9e6f8-2eb1-4091-969f-6fcdea84664a",
+      "name": "Avg Sleep time",
+      "credentials": {
+        "postgres": {
+          "id": "fUMBZtF42Edf5puE",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  ROUND(\n    AVG(CASE WHEN dn.\"is_weekend\" THEN sd.\"TotalSleep\" END)\n    -\n    AVG(CASE WHEN NOT dn.\"is_weekend\" THEN sd.\"TotalSleep\" END)\n  )::int AS weekend_recovery_bonus\nFROM \"SLEEPDATA\" sd\nJOIN \"date_norm\" dn ON sd.\"Date\" = dn.\"date\"\nWHERE dn.\"date\"\nBETWEEN to_date('{{ $json[\"\"] }}','YYYY-MM-DD')\n    AND to_date('{{ $json[\"\"] }}','YYYY-MM-DD') + INTERVAL '6 days';\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        32,
+        1696
+      ],
+      "id": "340582e6-0fbb-4553-b8cb-420ca81151fc",
+      "name": "Weekend Extra Sleep",
+      "credentials": {
+        "postgres": {
+          "id": "fUMBZtF42Edf5puE",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  ROUND(\n    (\n      AVG(sm.\"sleep_efficiency_pct\") * 0.4 +\n      AVG(sd.\"TotalSleep\") / 480 * 100 * 0.3 +\n      AVG(o.\"Oxygen\") * 0.2 +\n      (100 - AVG(b.\"BpmAVG\")) * 0.1\n    )::numeric\n  )::int AS weekly_health_score\nFROM \"sleep_metrics\" sm\nJOIN \"SLEEPDATA\" sd ON sm.\"Date\" = sd.\"Date\"\nJOIN \"O2STAT\" o ON sm.\"Date\" = o.\"Date\"\nJOIN \"BPMDATA\" b ON sm.\"Date\" = b.\"Date\"\nJOIN \"date_norm\" dn ON sm.\"Date\" = dn.\"date\"\nWHERE dn.\"date\"\nBETWEEN to_date('{{ $json[\"\"] }}','YYYY-MM-DD')\n    AND to_date('{{ $json[\"\"] }}','YYYY-MM-DD') + INTERVAL '6 days';\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        32,
+        1856
+      ],
+      "id": "c761f975-9c59-4e47-9c33-0b5b2395a195",
+      "name": "Health Score",
+      "credentials": {
+        "postgres": {
+          "id": "fUMBZtF42Edf5puE",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "Sleep_Eff",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        240,
+        416
+      ],
+      "id": "b5daad86-17f8-4c9f-a943-4f4ed4c8f8d2",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "Total_Sleep",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        240,
+        576
+      ],
+      "id": "bac17b2e-4b5d-45b7-ac4d-dd43dc3af991",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "Step_Count",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        240,
+        736
+      ],
+      "id": "59cc4f51-0f19-40a7-b579-c956247c52d0",
+      "name": "Aggregate2"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "Sleep_Time_Compare",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        240,
+        896
+      ],
+      "id": "b6bdbb37-b6f8-444c-ac45-8d8af87e2a1a",
+      "name": "Aggregate3"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "Oxygen",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        240,
+        1056
+      ],
+      "id": "6a0f03f4-36bb-424d-84c3-1d74c51eb204",
+      "name": "Aggregate4"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "Avg_BPM",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        240,
+        1216
+      ],
+      "id": "41f74d9c-8f3b-4f40-9c42-109481000bc3",
+      "name": "Aggregate5"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "Min_BPM",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        240,
+        1376
+      ],
+      "id": "10a4e509-e5cc-4279-a139-0f729bc0772d",
+      "name": "Aggregate6"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "Max_BPM",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        240,
+        1536
+      ],
+      "id": "f755ea84-0bfb-4be8-bc71-815d1ca4c0e0",
+      "name": "Aggregate7"
+    },
+    {
+      "parameters": {
+        "numberInputs": 10
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        624,
+        1248
+      ],
+      "id": "dcdddc49-3cc9-452c-bc61-4167a8a65ef5",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const out = {};\n\nfor (const item of items) {\n  const key = Object.keys(item.json)[0];\n  out[key] = item.json[key];\n}\n\nreturn [{ json: out }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        1216
+      ],
+      "id": "7c071083-3300-46b1-8ecc-bf093c8eed48",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// Merge metrics + AI summary safely\nconst metrics = items.find(i => i.json.weekly_health_score)?.json || {};\nconst ai = items.find(i => i.json.ai_summary)?.json || {};\n\nconst report = { ...metrics, ...ai };\n\n// Helpers\nconst tableRows = (arr, cols) =>\n  (arr || []).map(r =>\n    `<tr>${cols.map(c => `<td>${r[c] ?? '—'}</td>`).join('')}</tr>`\n  ).join('');\n\nconst avg = (arr, key) =>\n  arr && arr.length\n    ? Math.round(arr.reduce((a,b) => a + b[key], 0) / arr.length)\n    : '—';\n\n// HTML\nconst html = `\n<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n<style>\nbody { font-family: Inter, Arial, sans-serif; margin: 40px; color: #1f2937; }\nh1, h2 { color: #111827; }\n.cover { page-break-after: always; }\n\n.kpis { display: flex; gap: 24px; margin: 20px 0; }\n.kpi { padding: 16px; border-radius: 12px; background: #f3f4f6; width: 220px; }\n.kpi-value { font-size: 32px; font-weight: bold; }\n\n.section {\n  page-break-inside: avoid;\n  break-inside: avoid;\n  margin-bottom: 40px;\n}\n\n.page-break {\n  page-break-after: always;\n  break-after: page;\n}\n\ntable {\n  width: 100%;\n  border-collapse: collapse;\n  margin-top: 12px;\n}\nth, td {\n  border-bottom: 1px solid #e5e7eb;\n  padding: 8px;\n  text-align: left;\n}\nth { background: #f9fafb; }\n\n.ai-box {\n  background: #eef2ff;\n  padding: 20px;\n  border-radius: 12px;\n  margin-top: 24px;\n}\n\n.muted { color: #6b7280; }\n</style>\n</head>\n\n<body>\n\n<!-- COVER PAGE -->\n<div class=\"cover\">\n  <h1>Weekly Health Report</h1>\n\n  <div class=\"kpis\">\n    <div class=\"kpi\">\n      <div class=\"muted\">Health Score</div>\n      <div class=\"kpi-value\">${report.weekly_health_score ?? '—'}</div>\n    </div>\n\n    <div class=\"kpi\">\n      <div class=\"muted\">Weekend Recovery Bonus</div>\n      <div class=\"kpi-value\">${report.weekend_recovery_bonus ?? '—'}</div>\n    </div>\n\n    <div class=\"kpi\">\n      <div class=\"muted\">Avg Sleep Efficiency</div>\n      <div class=\"kpi-value\">${avg(report.Sleep_Eff, 'sleep_efficiency_pct')}%</div>\n    </div>\n  </div>\n\n  <div class=\"ai-box\">\n    <h2>AI Summary</h2>\n    <p>${(report.ai_summary || 'No summary available').replace(/\\n/g,'<br>')}</p>\n  </div>\n</div>\n\n<!-- PAGE 2 -->\n<div class=\"section\">\n  <h2>Sleep Efficiency</h2>\n  <table>\n    <tr><th>Day</th><th>Date</th><th>Efficiency (%)</th></tr>\n    ${tableRows(report.Sleep_Eff, ['Day','Date','sleep_efficiency_pct'])}\n  </table>\n</div>\n\n<div class=\"section\">\n  <h2>Total Sleep (minutes)</h2>\n  <table>\n    <tr><th>Day</th><th>Date</th><th>Total Sleep</th></tr>\n    ${tableRows(report.Total_Sleep, ['Day','Date','TotalSleep'])}\n  </table>\n</div>\n\n<div class=\"page-break\"></div>\n\n<!-- PAGE 3 -->\n<div class=\"section\">\n  <h2>Step Count</h2>\n  <table>\n    <tr><th>Day</th><th>Date</th><th>Steps</th></tr>\n    ${tableRows(report.Step_Count, ['Day','Date','StepCount'])}\n  </table>\n</div>\n\n<div class=\"section\">\n  <h2>Oxygen Saturation</h2>\n  <table>\n    <tr><th>Day</th><th>Date</th><th>Oxygen (%)</th></tr>\n    ${tableRows(report.Oxygen, ['Day','Date','Oxygen'])}\n  </table>\n</div>\n\n<div class=\"page-break\"></div>\n\n<!-- PAGE 4 -->\n<div class=\"section\">\n  <h2>Heart Rate</h2>\n  <table>\n    <tr><th>Day</th><th>Date</th><th>Avg</th><th>Min</th><th>Max</th></tr>\n    ${(report.Avg_BPM || []).map((r,i) => `\n      <tr>\n        <td>${r.Day}</td>\n        <td>${r.Date}</td>\n        <td>${r.BpmAVG}</td>\n        <td>${report.Min_BPM?.[i]?.BpmMIN ?? '—'}</td>\n        <td>${report.Max_BPM?.[i]?.BpmMAX ?? '—'}</td>\n      </tr>\n    `).join('')}\n  </table>\n</div>\n\n</body>\n</html>\n`;\n\nreturn [{ html }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1648,
+        1344
+      ],
+      "id": "5adbc509-4006-4f13-a51e-592814230d60",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "html_content": "={{ $json.html }}",
+        "output_format": "file"
+      },
+      "type": "n8n-nodes-htmlcsstopdf.htmlcsstopdf",
+      "typeVersion": 1,
+      "position": [
+        1808,
+        1344
+      ],
+      "id": "d878fe5f-6b9a-4046-8631-73249203d10d",
+      "name": "Convert HTML to PDF",
+      "credentials": {
+        "htmlcsstopdfApi": {
+          "id": "GewqwJtdnnWeJVlF",
+          "name": "HTML to PDF account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Produce a concise, human-friendly summary (15-20 sentences).\nFocus on sleep duration, activity, heart rate, and recovery patterns.\n\n\nData:\n{{ JSON.stringify($json) }}\n"
+            }
+          ]
+        },
+        "simplify": false,
+        "builtInTools": {},
+        "options": {
+          "systemMessage": "You are a concise and helpful data analyst. Produce a short (15-20 sentence) human-friendly summary of the week, call out strengths, issues, and one recommendation."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        864,
+        1440
+      ],
+      "id": "d072c713-8d85-4abb-ae84-4e888a615940",
+      "name": "Message a model",
+      "executeOnce": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jrtu9xc6ky8skBkt",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5fbc28fe-7935-40ab-ac33-59c70363ef21",
+              "name": "ai_summary",
+              "value": "={{ $json.candidates[0].content.parts[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1136,
+        1440
+      ],
+      "id": "e472f9f9-f90b-4844-9ac2-88aad6ebb1f7",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const combined = {};\n\nfor (const item of items) {\n  // each item.json is either a metric object or { ai_summary: \"...\" }\n  Object.assign(combined, item.json);\n}\n\nreturn [\n  {\n    json: combined\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1472,
+        1344
+      ],
+      "id": "f42c474b-9c76-4062-8ebe-8cdef968925e",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1296,
+        1344
+      ],
+      "id": "090ab806-97da-4ef0-8ac6-dc0588640831",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "sendTo": "akaash297@gmail.com",
+        "subject": "Weekly Report",
+        "emailType": "text",
+        "message": "Weekly REPORT",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2016,
+        1344
+      ],
+      "id": "bf54923f-7abf-421d-ae19-91c1efc885e4",
+      "name": "Send a message",
+      "webhookId": "613d4b73-274d-45e2-b343-9baa278fc8fd",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "yp3acgUZGZhknB7a",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 1,
+        "unit": "minutes"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -480,
+        1056
+      ],
+      "id": "f1ea239a-ce6f-495d-9850-6b4e007f7e26",
+      "name": "Wait",
+      "webhookId": "8c9c74d6-dd90-4ab1-8481-71fcb3a45cda"
+    },
+    {
+      "parameters": {
+        "content": "# Data ingestion",
+        "height": 80,
+        "width": 288,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        144,
+        -576
+      ],
+      "id": "b06c61de-9f92-400b-bf08-26f73105fdaa",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "# Data Aggregation and Analysis",
+        "height": 80,
+        "width": 560,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        592,
+        672
+      ],
+      "id": "20e85a3f-bd26-4827-b3fe-29d63248d3c0",
+      "name": "Sticky Note2"
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "StepsJSON",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "oxygenJSON",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "bpmJSON",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "sleepJSON",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "StepsJSON": {
+      "main": [
+        [
+          {
+            "node": "GetCount",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "oxygenJSON": {
+      "main": [
+        [
+          {
+            "node": "GetPercentage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "bpmJSON": {
+      "main": [
+        [
+          {
+            "node": "Normalize BPM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetCount": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetPercentage": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "sleepJSON": {
+      "main": [
+        [
+          {
+            "node": "Normalize Sleep",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize BPM": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Sleep": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Merge": {
+      "main": [
+        [
+          {
+            "node": "FAIL MERGE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send Fails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FAIL MERGE": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Send Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        [
+          {
+            "node": "Error Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query2": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ],
+        [
+          {
+            "node": "Error Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query3": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 3
+          }
+        ],
+        [
+          {
+            "node": "Error Merge",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Start Date": {
+      "main": [
+        [
+          {
+            "node": "Sleep Efficiency",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Total Sleep Time",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Step Count",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Oxygen",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "AvgBPM",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "MinBPM",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "MaxBPM",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Avg Sleep time",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Weekend Extra Sleep",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Health Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sleep Efficiency": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Total Sleep Time": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Health Score": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 9
+          }
+        ]
+      ]
+    },
+    "Step Count": {
+      "main": [
+        [
+          {
+            "node": "Aggregate2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avg Sleep time": {
+      "main": [
+        [
+          {
+            "node": "Aggregate3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Oxygen": {
+      "main": [
+        [
+          {
+            "node": "Aggregate4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AvgBPM": {
+      "main": [
+        [
+          {
+            "node": "Aggregate5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MinBPM": {
+      "main": [
+        [
+          {
+            "node": "Aggregate6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MaxBPM": {
+      "main": [
+        [
+          {
+            "node": "Aggregate7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Aggregate2": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Aggregate3": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Aggregate4": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Aggregate5": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "Aggregate6": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 6
+          }
+        ]
+      ]
+    },
+    "Aggregate7": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 7
+          }
+        ]
+      ]
+    },
+    "Weekend Extra Sleep": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 8
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Convert HTML to PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert HTML to PDF": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Start Date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "pinData": {},
+  "triggerCount": 0,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}
