@@ -5,6 +5,9 @@ Android Exporter is from https://github.com/angeloanan/HealthConnectExports but 
 
 https://github.com/AKAASH297/HealthConnectExports-modifed
 
+**OUTPUT SAMPLE PDF(sent to mail)**
+<img width="1560" height="1094" alt="Screenshot 2026-01-20 235039" src="https://github.com/user-attachments/assets/998ba859-48b4-4946-915f-4fc7d6b3665d" />
+
 𝗔𝗿𝗰𝗵𝗶𝘁𝗲𝗰𝘁𝘂𝗿𝗲 𝗢𝘃𝗲𝗿𝘃𝗶𝗲𝘄:
 
       • Data source: Android Health Connect API (via a modified open-source exporter)
